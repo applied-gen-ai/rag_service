@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RAG WebSocket Test</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px; 
+            max-width: 800px;
+            margin: 0 auto;
+            background: #f0f2f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1a73e8; }
+        #output { 
+            border: 2px solid #e0e0e0;
+            padding: 15px; 
+            min-height: 400px;
+            max-height: 500px;
+            margin: 15px 0;
+            background: #fafafa;
+            border-radius: 8px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+        input { 
+            padding: 12px;
+            width: calc(100% - 120px);
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        button { 
+            padding: 12px 25px;
+            font-size: 16px;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover { background: #1557b0; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .status { color: #f57c00; font-weight: bold; }
+        .token { color: #2e7d32; }
+        .error { color: #d32f2f; font-weight: bold; }
+        .done { color: #1976d2; font-weight: bold; }
+        .sent { color: #5e35b1; }
+        .connection { color: #00897b; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RAG Streaming Test</h1>
+        
+        <div>
+            <input id="input" type="text" 
+                   placeholder="Ask a question..." 
+                   autofocus>
+            <button id="sendBtn" onclick="send()">Send</button>
+        </div>
+        
+        <div id="output"></div>
+    </div>
+    
+    <script>
+        let ws = null;
+        let currentResponse = '';
+        
+        window.onload = () => {
+            connect();
+        };
+        
+        function connect() {
+            ws = new WebSocket('ws://localhost:8080/ws/chat');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            ws.onopen = () => {
+                addLine('Connected to server', 'connection');
+                sendBtn.disabled = false;
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleMessage(data);
+                } catch (e) {
+                    addLine('Received invalid JSON', 'error');
+                }
+            };
+            
+            ws.onerror = (error) => {
+                addLine('Connection error', 'error');
+                sendBtn.disabled = true;
+            };
+            
+            ws.onclose = () => {
+                addLine('Disconnected from server', 'connection');
+                sendBtn.disabled = true;
+            };
+        }
+        
+        function handleMessage(data) {
+            const type = data.type;
+            
+            if (type === 'status') {
+                addLine(`${data.message}`, 'status');
+                
+            } else if (type === 'token') {
+                // Append to current line (streaming effect)
+                appendToLastLine(data.content, 'token');
+                currentResponse += data.content;
+                
+            } else if (type === 'error') {
+                addLine(`Error: ${data.message}`, 'error');
+                if (data.details) {
+                    addLine(`   Details: ${data.details}`, 'error');
+                }
+                
+            } else if (type === 'done') {
+                addLine(''); // New line after streaming
+                addLine(`${data.message}`, 'done');
+                addLine('─'.repeat(60), 'status');
+                currentResponse = '';
+            }
+        }
+        
+        function send() {
+            const input = document.getElementById('input');
+            const query = input.value.trim();
+            
+            if (!query) {
+                alert('Please enter a question');
+                return;
+            }
+            
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('Not connected to server');
+                return;
+            }
+            
+            // Send query
+            const message = { query: query };
+            ws.send(JSON.stringify(message));
+            
+            addLine(`You: ${query}`, 'sent');
+            addLine(''); // Empty line
+            
+            input.value = '';
+        }
+        
+        function addLine(text, className = '') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = className;
+            div.textContent = text;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function appendToLastLine(text, className = '') {
+            const output = document.getElementById('output');
+            let lastDiv = output.lastElementChild;
+            
+            // If no last div or last div is different class, create new one
+            if (!lastDiv || !lastDiv.classList.contains(className)) {
+                lastDiv = document.createElement('div');
+                lastDiv.className = className;
+                output.appendChild(lastDiv);
+            }
+            
+            lastDiv.textContent += text;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        // Allow Enter key to send
+        document.getElementById('input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                send();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+llm_grpc/llm_pb2.py
+llm_grpc/llm_pb2_grpc.py
+llm_grpc/*_pb2*.py
+llm_grpc/*.pyi
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Env files
+.env
+.env.*
+
+# Logs
+*.log

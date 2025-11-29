@@ -1,0 +1,211 @@
+# ============================================================================
+# RAG Streaming Service - .gitignore
+# ============================================================================
+# This .gitignore INCLUDES generated gRPC files for version consistency
+# ============================================================================
+
+# ============================================================================
+# SECRETS & CREDENTIALS (CRITICAL - NEVER COMMIT)
+# ============================================================================
+.env
+.env.local
+.env.production
+.env.staging
+.env.*.local
+!.env.example
+
+# API Keys and secrets
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+secrets.json
+credentials.json
+config/secrets.yaml
+
+# ============================================================================
+# TERRAFORM STATE (CONTAINS SECRETS!)
+# ============================================================================
+# Terraform state files contain sensitive information
+terraform.tfvars
+*.tfvars
+!*.tfvars.example
+
+# Terraform state
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Terraform directories
+.terraform/
+.terraform.lock.hcl
+
+# ============================================================================
+# PYTHON BUILD ARTIFACTS
+# ============================================================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# ============================================================================
+# VIRTUAL ENVIRONMENTS
+# ============================================================================
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+virtualenv/
+
+# ============================================================================
+# TESTING & COVERAGE
+# ============================================================================
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.hypothesis/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+nosetests.xml
+test-results/
+
+# ============================================================================
+# IDE & EDITOR FILES
+# ============================================================================
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ============================================================================
+# OPERATING SYSTEM FILES
+# ============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ============================================================================
+# LOGS & DATABASES
+# ============================================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================================================
+# DATA & MODEL FILES (Large files)
+# ============================================================================
+# User data
+data/
+*.csv
+*.jsonl
+*.parquet
+
+# Model weights (should be downloaded, not committed)
+models/
+checkpoints/
+*.bin
+*.onnx
+*.h5
+*.pkl
+*.pickle
+*.safetensors
+*.pth
+*.pt
+*.ckpt
+
+# ============================================================================
+# DOCKER
+# ============================================================================
+# Docker logs
+docker-compose.override.yml
+.dockerignore.swp
+
+# ============================================================================
+# MISC
+# ============================================================================
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Backup files
+*.bak
+*.tmp
+*.temp
+
+# Cache
+.cache/
+*.cache
+
+# ============================================================================
+# PROJECT SPECIFIC
+# ============================================================================
+# Add any project-specific exclusions here

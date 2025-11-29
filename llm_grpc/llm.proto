@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package llm.v1;
+
+// LLM service definition
+service LLM {
+  // Non-streaming: send prompt, get complete response
+  rpc Generate(GenerateRequest) returns (GenerateReply);
+  
+  // Streaming: send prompt, get tokens one by one
+  rpc StreamGenerate(GenerateRequest) returns (stream Token);
+}
+
+// Request message
+message GenerateRequest {
+  string prompt = 1;          // The prompt to send
+  int32  max_tokens = 2;      // Maximum tokens to generate
+  float  temperature = 3;     // Sampling temperature (0.0 to 2.0)
+  float  top_p = 4;           // Top-p sampling
+  int32  top_k = 5;           // Top-k sampling
+}
+
+// Non-streaming response
+message GenerateReply {
+  string text = 1;            // Complete generated text
+}
+
+// Streaming token
+message Token {
+  string text = 1;            // Single token text
+  bool   is_last = 2;         // Is this the last token?
+}

@@ -1,0 +1,25 @@
+# Navigate to project
+cd E:\RAG\TheCode_rag
+
+# Activate virtual environment (if you have one)
+.\venv\Scripts\activate
+
+# Run the application
+python -m uvicorn app:app --host 0.0.0.0 --port 8081 --reload
+
+
+In another Terminal
+====================
+# Navigate to project
+cd E:\RAG\TheCode_rag
+
+# Activate virtual environment (if you have one)
+.\venv\Scripts\activate
+
+python .\test_interactive.py
+
+
+
+
+python ..\testing\advanced_test.py
+

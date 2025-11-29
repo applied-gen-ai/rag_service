@@ -1,0 +1,687 @@
+# ============================================================================
+# RAG SERVICE TESTING SCRIPTS - COMPLETE USAGE GUIDE
+# ============================================================================
+
+## OVERVIEW
+
+You have **4 Python scripts** to test your Fargate-deployed RAG service:
+
+1. **simple_test.py** - Quick single query test
+2. **advanced_test.py** - Multiple queries with detailed metrics
+3. **interactive_chat.py** - Chat interface with your RAG
+4. **load_test.py** - Performance/load testing
+
+All scripts test the complete flow:
+```
+Client → WebSocket → Fargate → RAG → Qdrant (context) → EKS LLM → Streaming Response
+```
+
+---
+
+## PREREQUISITES
+
+### Install Dependencies
+
+```powershell
+pip install websockets
+```
+
+**That's it!** Just one dependency.
+
+---
+
+## GETTING YOUR WEBSOCKET URL
+
+### Option 1: Auto-detect (Recommended)
+
+Scripts 2-4 auto-detect from Terraform output:
+
+```powershell
+cd E:\rag_radha\rag_service\terraform
+terraform output websocket_url
+```
+
+**Example output:**
+```
+ws://rag-streaming-production-alb-123456789.us-east-1.elb.amazonaws.com/ws/chat
+```
+
+### Option 2: Manual
+
+If not using Terraform, get your ALB DNS name:
+
+```powershell
+aws elbv2 describe-load-balancers --names rag-streaming-production-alb --query "LoadBalancers[0].DNSName" --output text
+```
+
+Then build the WebSocket URL:
+```
+ws://<ALB-DNS-NAME>/ws/chat
+```
+
+---
+
+## SCRIPT 1: SIMPLE TEST (QUICK & EASY)
+
+**Purpose:** Quick single-query test to verify service is working
+
+### Setup
+
+1. Open `simple_test.py`
+2. Update this line with your URL:
+
+```python
+WEBSOCKET_URL = "ws://YOUR-ALB-DNS-HERE/ws/chat"
+```
+
+### Run
+
+```powershell
+python simple_test.py
+```
+
+### Expected Output
+
+```
+======================================================================
+RAG SERVICE - STREAMING TEST
+======================================================================
+
+Connecting to: ws://rag-streaming-production-alb-123.us-east-1.elb.amazonaws.com/ws/chat
+
+✓ Connected successfully!
+
+Sending query: What is the deductible for PPO plan?
+
+----------------------------------------------------------------------
+STREAMING RESPONSE:
+----------------------------------------------------------------------
+
+[Context Retrieved: 3 chunks]
+
+Based on the insurance documents, the deductible for the PPO plan is $500 for 
+individual coverage and $1,000 for family coverage. This is an annual deductible, 
+meaning you must pay this amount out-of-pocket before the insurance company begins 
+to cover eligible expenses...
+
+----------------------------------------------------------------------
+✓ Stream complete!
+
+Metadata:
+  - Total tokens: 156
+  - Time taken: 2.34s
+
+======================================================================
+TEST COMPLETED SUCCESSFULLY
+======================================================================
+```
+
+### When to Use
+
+-  First-time testing after deployment
+-  Quick verification after changes
+-  CI/CD health checks
+
+---
+
+## SCRIPT 2: ADVANCED TEST (DETAILED METRICS)
+
+**Purpose:** Run multiple queries with performance metrics
+
+### Features
+
+- Auto-detects WebSocket URL from Terraform
+- Tests 3 different queries
+- Shows detailed timing metrics
+- Displays context sources
+- Calculates tokens per second
+
+### Run
+
+```powershell
+python advanced_test.py
+```
+
+### Expected Output
+
+```
+================================================================================
+Running 3 test queries...
+================================================================================
+
+################################################################################
+# TEST 1/3
+################################################################################
+
+================================================================================
+RAG SERVICE - STREAMING TEST
+================================================================================
+
+Timestamp: 2025-11-28 15:30:45
+Endpoint:  ws://rag-streaming-production-alb-123.us-east-1.elb.amazonaws.com/ws/chat
+Query:     What is the deductible for PPO plan?
+
+Connecting to RAG service... ✓ Connected!
+
+[Retrieved 3 context chunks from Qdrant]
+
+[Time to First Token: 0.85s]
+
+Based on the insurance documents, the deductible for the PPO plan...
+
+--------------------------------------------------------------------------------
+✓ STREAM COMPLETE
+--------------------------------------------------------------------------------
+
+Statistics:
+  • Total tokens:        156
+  • Total time:          2.34s
+  • Time to first token: 0.85s
+  • Tokens per second:   104.70
+  • Context chunks:      3
+
+Server Metadata:
+  • model: claude-sonnet-4.5
+  • total_tokens: 156
+
+Context Sources:
+  1. Score: 0.8542
+     Preview: The PPO plan requires an annual deductible of $500 for individual...
+  2. Score: 0.8231
+     Preview: Family coverage under PPO has a combined deductible of $1,000...
+  3. Score: 0.7945
+     Preview: After meeting your deductible, the PPO plan covers 80% of costs...
+
+================================================================================
+TEST COMPLETED SUCCESSFULLY
+================================================================================
+
+Waiting 2 seconds before next test...
+
+[... Tests 2 and 3 ...]
+
+================================================================================
+TEST SUMMARY
+================================================================================
+
+Total tests: 3
+Passed:      3
+Failed:      0
+
+✓ All tests passed! 
+```
+
+### When to Use
+
+-  Comprehensive testing
+-  Performance benchmarking
+-  Regression testing
+-  Automated test suites
+
+---
+
+## SCRIPT 3: INTERACTIVE CHAT (TALK TO YOUR RAG)
+
+**Purpose:** Have a conversation with your RAG service
+
+### Features
+
+- Interactive command-line interface
+- Real-time streaming responses
+- Color-coded output
+- Multi-turn conversations
+- Auto-detects URL
+
+### Run
+
+```powershell
+python interactive_chat.py
+```
+
+### Expected Output
+
+```
+================================================================================
+RAG SERVICE - INTERACTIVE CHAT
+================================================================================
+
+Connecting to: ws://rag-streaming-production-alb-123.us-east-1.elb.amazonaws.com/ws/chat
+
+✓ Connected successfully!
+
+Type your questions (or 'quit' to exit)
+Press Ctrl+C to stop
+
+--------------------------------------------------------------------------------
+
+You: What is the deductible for PPO plan?
+
+RAG Assistant: Based on the insurance documents, the deductible for the PPO 
+plan is $500 for individual coverage and $1,000 for family coverage...
+
+[Response complete]
+
+--------------------------------------------------------------------------------
+
+You: What about HMO?
+
+RAG Assistant: The HMO plan has a lower deductible of $250 for individual 
+coverage and $500 for family coverage. However, HMO plans require you to 
+choose a primary care physician...
+
+[Response complete]
+
+--------------------------------------------------------------------------------
+
+You: quit
+
+Goodbye! 
+
+Session ended. Total questions asked: 2
+```
+
+### Commands
+
+- **Type any question** - Get a response
+- **quit** or **exit** or **q** - Exit the chat
+- **Ctrl+C** - Force stop
+
+### When to Use
+
+-  Manual testing
+-  Exploring RAG responses
+-  Demos to stakeholders
+-  Quick Q&A sessions
+
+---
+
+## SCRIPT 4: LOAD TEST (PERFORMANCE TESTING)
+
+**Purpose:** Test performance under load with concurrent requests
+
+### Configuration
+
+Edit these at top of `load_test.py`:
+
+```python
+NUM_CONCURRENT_REQUESTS = 5   # Number of concurrent connections
+NUM_QUERIES_PER_CONNECTION = 3  # Queries per connection
+DELAY_BETWEEN_QUERIES = 1       # Seconds between queries
+```
+
+### Run
+
+```powershell
+python load_test.py
+```
+
+### Expected Output
+
+```
+================================================================================
+RAG SERVICE - LOAD TEST
+================================================================================
+
+Configuration:
+  Endpoint:             ws://rag-streaming-production-alb-123.us-east-1.elb.amazonaws.com/ws/chat
+  Concurrent Requests:  5
+  Queries per Request:  3
+  Total Queries:        15
+  Delay Between:        1s
+
+================================================================================
+
+[Connection 1] Starting...
+[Connection 2] Starting...
+[Connection 3] Starting...
+[Connection 4] Starting...
+[Connection 5] Starting...
+
+  [1:1] Sending: What is the deductible for PPO plan?...
+  [2:1] Sending: What are the benefits of the HMO plan?...
+  [3:1] Sending: How do I file a claim?...
+  [4:1] Sending: What is covered under preventive care?...
+  [5:1] Sending: What is the out-of-pocket maximum?...
+
+  [1:1] ✓ Complete - 2.34s, 156 tokens, 104.7 tok/s
+  [2:1] ✓ Complete - 2.67s, 189 tokens, 98.3 tok/s
+  [3:1] ✓ Complete - 2.45s, 167 tokens, 102.1 tok/s
+  ...
+
+[Connection 1] Complete
+[Connection 2] Complete
+[Connection 3] Complete
+[Connection 4] Complete
+[Connection 5] Complete
+
+================================================================================
+Load test completed in 23.45 seconds
+Overall throughput: 0.64 requests/sec
+
+================================================================================
+LOAD TEST SUMMARY
+================================================================================
+
+Requests:
+  Total:      15
+  Successful: 15 (100.0%)
+  Failed:     0 (0.0%)
+
+Response Times (seconds):
+  Min:    2.12
+  Max:    3.45
+  Mean:   2.67
+  Median: 2.56
+  StdDev: 0.34
+
+Time to First Token (seconds):
+  Min:    0.78
+  Max:    1.23
+  Mean:   0.95
+  Median: 0.91
+
+Token Counts:
+  Total:  2,345
+  Mean:   156.3
+
+Throughput (tokens/sec):
+  Min:    89.2
+  Max:    112.4
+  Mean:   101.5
+
+================================================================================
+```
+
+### When to Use
+
+-  Load/stress testing
+-  Performance benchmarking
+-  Auto-scaling verification
+-  Capacity planning
+
+---
+
+## COMPARISON TABLE
+
+| Feature | Simple | Advanced | Interactive | Load Test |
+|---------|--------|----------|-------------|-----------|
+| **Queries** | 1 | 3 | Unlimited | Configurable |
+| **Auto-detect URL** | 0 | 1 | 1 | 1 |
+| **Metrics** | Basic | Detailed | None | Detailed |
+| **Interactive** | 0 | 0 | 1 | 0 |
+| **Concurrent** | 0 | 0 | 0 | 1 |
+| **Best For** | Quick test | CI/CD | Demos | Performance |
+| **Runtime** | 10s | 30s | Manual | 1-5 min |
+
+---
+
+## TROUBLESHOOTING
+
+### Error: "Invalid WebSocket URL"
+
+**Problem:** Wrong URL format or DNS name
+
+**Solution:**
+```powershell
+# Get correct URL
+terraform output websocket_url
+
+# Or manually check ALB exists
+aws elbv2 describe-load-balancers --names rag-streaming-production-alb
+```
+
+---
+
+### Error: "Connection Refused"
+
+**Problem:** Service not running or not healthy
+
+**Solution:**
+```powershell
+# Check service status
+aws ecs describe-services --cluster rag-streaming-production-cluster --services rag-streaming-production-service
+
+# Check tasks are running
+aws ecs list-tasks --cluster rag-streaming-production-cluster --service-name rag-streaming-production-service
+
+# Check task health
+aws ecs describe-tasks --cluster rag-streaming-production-cluster --tasks <task-id>
+```
+
+---
+
+### Error: "Connection Timeout"
+
+**Problem:** Security groups blocking traffic
+
+**Solution:**
+```powershell
+# Check ALB security group allows port 80
+aws ec2 describe-security-groups --group-ids <alb-sg-id>
+
+# Check Fargate security group allows traffic from ALB
+aws ec2 describe-security-groups --group-ids <fargate-sg-id>
+```
+
+---
+
+### Error: "No response received"
+
+**Problem:** Application error or crash
+
+**Solution:**
+```powershell
+# Check CloudWatch logs
+aws logs tail /ecs/rag-streaming-production --follow
+
+# Look for errors in startup or request handling
+```
+
+---
+
+### Slow Responses
+
+**Problem:** Performance issues
+
+**Check:**
+1. **Task CPU/Memory:** May need more resources
+2. **LLM Endpoint:** EKS service might be slow
+3. **Qdrant:** Vector search taking too long
+
+**Solution:**
+```powershell
+# Check task metrics
+aws ecs describe-services --cluster rag-streaming-production-cluster --services rag-streaming-production-service
+
+# Scale up if CPU/memory high
+aws ecs update-service --cluster rag-streaming-production-cluster --service rag-streaming-production-service --desired-count 4
+```
+
+---
+
+## ADVANCED USAGE
+
+### Custom Queries in Simple Test
+
+Edit `simple_test.py`:
+
+```python
+query = {
+    "query": "YOUR CUSTOM QUESTION HERE",
+    "stream": True
+}
+```
+
+---
+
+### Add More Test Queries in Advanced Test
+
+Edit `advanced_test.py`:
+
+```python
+test_queries = [
+    "What is the deductible for PPO plan?",
+    "What are the benefits of the HMO plan?",
+    "How do I file a claim?",
+    "YOUR NEW QUESTION HERE",  # Add your question
+]
+```
+
+---
+
+### Adjust Load Test Parameters
+
+Edit `load_test.py`:
+
+```python
+# Light load test
+NUM_CONCURRENT_REQUESTS = 2
+NUM_QUERIES_PER_CONNECTION = 2
+
+# Medium load test
+NUM_CONCURRENT_REQUESTS = 5
+NUM_QUERIES_PER_CONNECTION = 3
+
+# Heavy load test (be careful!)
+NUM_CONCURRENT_REQUESTS = 10
+NUM_QUERIES_PER_CONNECTION = 5
+```
+
+---
+
+### Save Responses to File
+
+Add this to any script:
+
+```python
+# After receiving full_response
+with open("response.txt", "w") as f:
+    f.write(full_response)
+```
+
+---
+
+### Measure Specific Metrics
+
+For advanced_test.py, you can extract specific metrics:
+
+```python
+# After stream completes, access:
+# - token_count: Number of tokens
+# - total_time: Total response time
+# - first_token_time: Time to first token
+# - context_chunks: Retrieved context
+
+# Calculate custom metrics
+latency_ms = total_time * 1000
+throughput = token_count / total_time
+```
+
+---
+
+## INTEGRATION WITH CI/CD
+
+### GitHub Actions Example
+
+```yaml
+name: Test RAG Service
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: pip install websockets
+      
+      - name: Run tests
+        run: python advanced_test.py
+        env:
+          WEBSOCKET_URL: ${{ secrets.RAG_WEBSOCKET_URL }}
+```
+
+---
+
+## BEST PRACTICES
+
+### Testing Workflow
+
+```
+1. Deploy service
+   ↓
+2. Run simple_test.py (verify basic functionality)
+   ↓
+3. Run advanced_test.py (verify metrics are good)
+   ↓
+4. Run interactive_chat.py (manual exploration)
+   ↓
+5. Run load_test.py (verify performance)
+   ↓
+6. Monitor CloudWatch (check for errors/warnings)
+```
+
+---
+
+### Performance Benchmarks
+
+**Good Performance:**
+- Time to First Token: < 1.5s
+- Tokens per Second: > 80
+- Success Rate: > 99%
+- Response Time: < 5s
+
+**Needs Optimization:**
+- Time to First Token: > 3s
+- Tokens per Second: < 50
+- Success Rate: < 95%
+- Response Time: > 10s
+
+---
+
+## QUICK REFERENCE
+
+```powershell
+# Install dependencies
+pip install websockets
+
+# Get WebSocket URL
+terraform output websocket_url
+
+# Quick test
+python simple_test.py
+
+# Comprehensive test
+python advanced_test.py
+
+# Interactive chat
+python interactive_chat.py
+
+# Load test
+python load_test.py
+
+# View logs
+aws logs tail /ecs/rag-streaming-production --follow
+```
+
+---
+
+## NEXT STEPS
+
+After testing:
+
+1. **If tests pass** → Deploy to production
+2. **If tests fail** → Check CloudWatch logs
+3. **If slow** → Scale up or optimize
+4. **If errors** → Debug and redeploy
+
+---
+
+**Happy Testing! **
