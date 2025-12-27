@@ -9,6 +9,7 @@ import os
 import asyncio
 import time
 import traceback
+import boto3
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from message_types import status_message, token_message, error_message, done_message, citation_message
@@ -572,6 +573,16 @@ async def websocket_chat(websocket: WebSocket):
                     search_score=best_score,
                     tokens=token_count
                 )
+
+                # calling the cloudwatch metrics function
+                try:
+                    publish_metrics(
+                    question=query,
+                    answer=cleaned_response,
+                    request_time_ms=int(query_time * 1000)
+                )
+                except Exception as e:
+                    logger.error(f"CloudWatch metrics failed: {e}")
                 
                 # Done
                 await websocket.send_text(done_message("Response complete"))
@@ -606,4 +617,50 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=PORT,
         log_level="info"
+    )
+
+# ECS service name (USED FOR CLOUDWATCH DIMENSIONS)
+ECS_SERVICE_NAME = os.getenv("ECS_SERVICE_NAME", "rag-service")
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+
+cloudwatch = boto3.client("cloudwatch", region_name=AWS_REGION)
+
+def publish_metrics(question: str, answer: str, request_time_ms: int):
+    """
+    Publish custom CloudWatch metrics
+    """
+    cloudwatch.put_metric_data(
+        Namespace="CustomApp",
+        MetricData=[
+            {
+                "MetricName": "UsersAskingQuestions",
+                "Dimensions": [{"Name": "Service", "Value": ECS_SERVICE_NAME}],
+                "Value": 1,
+                "Unit": "Count"
+            },
+            {
+                "MetricName": "QuestionsAsked",
+                "Dimensions": [{"Name": "Service", "Value": ECS_SERVICE_NAME}],
+                "Value": 1,
+                "Unit": "Count"
+            },
+            {
+                "MetricName": "AverageQuestionLength",
+                "Dimensions": [{"Name": "Service", "Value": ECS_SERVICE_NAME}],
+                "Value": len(question),
+                "Unit": "Count"
+            },
+            {
+                "MetricName": "AverageAnswerLength",
+                "Dimensions": [{"Name": "Service", "Value": ECS_SERVICE_NAME}],
+                "Value": len(answer),
+                "Unit": "Count"
+            },
+            {
+                "MetricName": "AverageRequestTime",
+                "Dimensions": [{"Name": "Service", "Value": ECS_SERVICE_NAME}],
+                "Value": request_time_ms,
+                "Unit": "Milliseconds"
+            }
+        ]
     )
