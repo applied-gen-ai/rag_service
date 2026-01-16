@@ -50,7 +50,7 @@ variable "container_name" {
 variable "container_port" {
   description = "Port the container listens on"
   type        = number
-  default     = 8501
+  default     = 8000
 }
 
 # Autoscaling
