@@ -16,13 +16,13 @@ module "ecr" {
 
 module "task-definition" {
   source             = "./Modules/task-definition"
-  ecr_image_url      = "${module.ecr.ecr_repo_url}:latest"  # use ECR repo from module
-  log_group_name     = "/ecs/my-app"
+
+  ecr_image_url      = "${module.ecr.ecr_repo_url}:latest"
   task_role_arn      = module.iam.task_execution_role_arn
   execution_role_arn = module.iam.task_execution_role_arn
-  vpc_id             = module.vpc.vpc_id        
 
-  llm_target         = var.llm_target
+  vpc_id     = data.terraform_remote_state.eks.outputs.vpc_id
+  llm_target = var.llm_target
 }
 
 module "ecs-cluster" {
@@ -30,18 +30,21 @@ module "ecs-cluster" {
 }
 
 module "ecs-service" {
-  source              = "./Modules/ecs-service"
+  source = "./Modules/ecs-service"
+
   name                = "rag-service"
   cluster_id          = module.ecs-cluster.cluster_id
   cluster_name        = module.ecs-cluster.cluster_name
   task_definition_arn = module.task-definition.task_definition_arn
-  desired_count       = 1
-  subnet_ids          = module.vpc.public_subnet_ids
-  security_group_id   = module.task-definition.security_group_id
-  vpc_id              = module.vpc.vpc_id
-  container_name      = "my-container"
-  container_port      = 8501
-  target_value        = 1000.0
+
+  subnet_ids        = data.terraform_remote_state.eks.outputs.public_subnet_ids
+  vpc_id            = data.terraform_remote_state.eks.outputs.vpc_id
+  security_group_id = module.task-definition.security_group_id
+
+  container_name = "my-container"
+  container_port = 8000   # MUST match task definition
+  desired_count  = 1
+
   log_group           = "/ecs/my-app"
   task_role_arn       = module.iam.task_execution_role_arn
   execution_role_arn  = module.iam.task_execution_role_arn
