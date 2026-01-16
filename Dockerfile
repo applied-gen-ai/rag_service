@@ -1,5 +1,5 @@
 # Use Python slim image for smaller size
-FROM python:3.10-slim
+FROM public.ecr.aws/docker/library/python:3.10-slim
 
 # Install system dependencies for sentence-transformers and gRPC
 RUN apt-get update && apt-get install -y \
