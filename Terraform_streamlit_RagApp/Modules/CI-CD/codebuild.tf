@@ -27,7 +27,7 @@ resource "aws_codebuild_project" "Ragapp_build" {
 
     environment_variable {
       name  = "ECR_REPO_NAME"
-      value = "streamlit-app-1"
+      value = "llm-rag-app"
     }
 
     environment_variable {
