@@ -10,7 +10,7 @@ resource "aws_codebuild_project" "Ragapp_build" {
   }
 
   environment {
-    compute_type    = "BUILD_GENERAL1_SMALL"
+    compute_type    = "BUILD_GENERAL1_2XLARGE"
     image           = "aws/codebuild/standard:5.0"
     type            = "LINUX_CONTAINER"
     privileged_mode = true

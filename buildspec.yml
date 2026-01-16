@@ -39,11 +39,11 @@ phases:
       - docker version
       - docker info
       - echo "Building Docker image..."
-      - docker build --no-cache --progress=plain -t "$REPOSITORY_URI:$IMAGE_TAG" .
+      - docker build --no-cache -t "$REPOSITORY_URI:$IMAGE_TAG" .
       - echo "Docker build completed, tagging image..."
       - docker tag "$REPOSITORY_URI:$IMAGE_TAG" "$REPOSITORY_URI:latest"
       - echo "Verifying image was created..."
-      - docker images | grep "$ECR_REPO_NAME" || (echo "Image not found after build!" && exit 1)
+      - docker images | grep "$REPOSITORY_URI" || (echo "Image not found after build!" && exit 1)
   post_build:
     commands:
       - echo "=== POST-BUILD PHASE STARTED ==="
