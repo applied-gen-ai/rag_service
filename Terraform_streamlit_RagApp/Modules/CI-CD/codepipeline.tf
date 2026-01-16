@@ -1,16 +1,10 @@
-# Create an S3 bucket for CodePipeline artifacts
-resource "aws_s3_bucket" "codepipeline_artifacts" {
+# Use existing S3 bucket
+data "aws_s3_bucket" "codepipeline_artifacts" {
   bucket = "${var.project_name}-artifacts-${var.environment}"
-
-  tags = {
-    Name        = "${var.project_name}-artifacts"
-    Environment = var.environment
-  }
 }
 
-# Block public access (recommended for security)
 resource "aws_s3_bucket_public_access_block" "codepipeline_artifacts_block" {
-  bucket = aws_s3_bucket.codepipeline_artifacts.id
+  bucket = data.aws_s3_bucket.codepipeline_artifacts.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -18,14 +12,14 @@ resource "aws_s3_bucket_public_access_block" "codepipeline_artifacts_block" {
   restrict_public_buckets = true
 }
 
-# Enable versioning (required for CodePipeline to keep artifact history)
 resource "aws_s3_bucket_versioning" "codepipeline_artifacts_versioning" {
-  bucket = aws_s3_bucket.codepipeline_artifacts.id
+  bucket = data.aws_s3_bucket.codepipeline_artifacts.id
 
   versioning_configuration {
     status = "Enabled"
   }
 }
+
 
 # CodePipeline definition
 resource "aws_codepipeline" "Ragapp_pipeline" {
@@ -34,7 +28,7 @@ resource "aws_codepipeline" "Ragapp_pipeline" {
 
 
 artifact_store {
-  location = aws_s3_bucket.codepipeline_artifacts.bucket
+  location = data.aws_s3_bucket.codepipeline_artifacts.bucket
   type     = "S3"
 }
 

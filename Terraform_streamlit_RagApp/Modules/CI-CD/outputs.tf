@@ -15,14 +15,13 @@ output "pipeline_name" {
 }
 
 output "artifact_bucket_name" {
-  description = "Name of the S3 bucket for CodePipeline artifacts"
-  value       = aws_s3_bucket.codepipeline_artifacts.bucket
+  value = data.aws_s3_bucket.codepipeline_artifacts.bucket
 }
 
 output "artifact_bucket_arn" {
-  description = "ARN of the S3 bucket for CodePipeline artifacts"
-  value       = aws_s3_bucket.codepipeline_artifacts.arn
+  value = data.aws_s3_bucket.codepipeline_artifacts.arn
 }
+
 
 output "codepipeline_arn" {
   description = "ARN of the CodePipeline"

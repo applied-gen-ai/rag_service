@@ -1,6 +1,5 @@
-resource "aws_cloudwatch_log_group" "ecs_logs" {
-  name              = var.log_group_name
-  retention_in_days = var.log_retention_in_days
+data "aws_cloudwatch_log_group" "ecs_logs" {
+  name = var.log_group_name
 }
 
 resource "aws_ecs_task_definition" "app" {
@@ -35,7 +34,7 @@ resource "aws_ecs_task_definition" "app" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.ecs_logs.name
+          awslogs-group         = data.aws_cloudwatch_log_group.ecs_logs.name
           awslogs-region        = "us-east-1"
           awslogs-stream-prefix = "ecs"
         }

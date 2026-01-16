@@ -10,5 +10,5 @@ output "security_group_id" {
 
 output "log_group_name" {
   description = "CloudWatch log group name"
-  value       = aws_cloudwatch_log_group.ecs_logs.name
+  value       = data.aws_cloudwatch_log_group.ecs_logs.name
 }
