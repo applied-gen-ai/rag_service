@@ -67,12 +67,17 @@ resource "aws_lb_listener" "test" {
 resource "aws_ecs_service" "rag_app" {
   name            = var.name
   cluster         = var.cluster_id
-  task_definition = var.task_definition_arn
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
 
   deployment_controller {
     type = "CODE_DEPLOY"
+  }
+
+  network_configuration {
+    subnets         = var.subnet_ids
+    security_groups = [var.security_group_id]
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -81,14 +86,11 @@ resource "aws_ecs_service" "rag_app" {
     container_port   = var.container_port
   }
 
-  network_configuration {
-    subnets          = var.subnet_ids
-    security_groups  = [var.security_group_id]
-    assign_public_ip = true
+  lifecycle {
+    ignore_changes = [
+      task_definition,
+      load_balancer
+    ]
   }
-
-  depends_on = [
-    aws_lb_listener.production,
-    aws_lb_listener.test
-  ]
 }
+
