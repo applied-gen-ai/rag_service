@@ -14,16 +14,11 @@ module "ecr" {
   source       = "./Modules/ecr"
 }
 
-module "task-definition" {
-  source             = "./Modules/task-definition"
-
-  ecr_image_url      = "${module.ecr.ecr_repo_url}:latest"
-  task_role_arn      = module.iam.task_execution_role_arn
-  execution_role_arn = module.iam.task_execution_role_arn
-
-  vpc_id     = data.terraform_remote_state.eks.outputs.vpc_id
-  llm_target = var.llm_target
+module "ecs-security-group" {
+  source = "./Modules/ecs-security-group"
+  vpc_id = data.terraform_remote_state.eks.outputs.vpc_id
 }
+
 
 module "ecs-cluster" {
   source = "./Modules/ecs-cluster"
@@ -35,11 +30,9 @@ module "ecs-service" {
   name                = "rag-service"
   cluster_id          = module.ecs-cluster.cluster_id
   cluster_name        = module.ecs-cluster.cluster_name
-  task_definition_arn = module.task-definition.task_definition_arn
 
   subnet_ids        = data.terraform_remote_state.eks.outputs.public_subnet_ids
   vpc_id            = data.terraform_remote_state.eks.outputs.vpc_id
-  security_group_id = module.task-definition.security_group_id
 
   container_name = "my-container"
   container_port = 8000   # MUST match task definition
@@ -49,6 +42,8 @@ module "ecs-service" {
   task_role_arn       = module.iam.task_execution_role_arn
   execution_role_arn  = module.iam.task_execution_role_arn
   region              = var.aws_region
+
+  security_group_id = module.ecs-security-group.security_group_id
 }
 
 module "cloudwatch" {
@@ -58,8 +53,8 @@ module "cloudwatch" {
   ecs_service_name            = module.ecs-service.ecs_service_name
   alb_arn_suffix              = module.ecs-service.alb_arn_suffix
   alb_target_group_arn_suffix = module.ecs-service.blue_target_group_arn_suffix
-  log_group_name              = module.task-definition.log_group_name
   region                      = "us-east-1"
+  log_group_name = "/ecs/my-app"
 
   cpu_threshold           = 60
   memory_threshold        = 60

@@ -14,11 +14,6 @@ variable "cluster_name" {
   type        = string
 }
 
-variable "task_definition_arn" {
-  description = "ARN of the ECS task definition to run"
-  type        = string
-}
-
 variable "desired_count" {
   description = "Desired number of ECS tasks"
   type        = number

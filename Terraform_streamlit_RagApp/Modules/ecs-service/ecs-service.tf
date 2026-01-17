@@ -4,6 +4,7 @@ resource "aws_lb" "ecs_alb" {
   load_balancer_type = "application"
   security_groups    = [var.security_group_id]
   subnets            = var.subnet_ids
+  idle_timeout = 300
 }
 
 resource "aws_lb_target_group" "blue" {
@@ -14,7 +15,7 @@ resource "aws_lb_target_group" "blue" {
   target_type = "ip"
 
   health_check {
-    path                = "/health"
+    path                = "/"
     protocol            = "HTTP"
     matcher             = "200"
     interval            = 30
@@ -32,7 +33,7 @@ resource "aws_lb_target_group" "green" {
   target_type = "ip"
 
   health_check {
-    path                = "/health"
+    path                = "/"
     protocol            = "HTTP"
     matcher             = "200"
     interval            = 30
@@ -64,26 +65,57 @@ resource "aws_lb_listener" "test" {
   }
 }
 
+resource "aws_ecs_task_definition" "bootstrap" {
+  family                   = "${var.name}-bootstrap"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = "1024"
+  memory                   = "2048"
+
+  execution_role_arn = var.execution_role_arn
+  task_role_arn      = var.task_role_arn
+
+  container_definitions = jsonencode([
+    {
+      name  = var.container_name
+      image = "public.ecr.aws/docker/library/nginx:latest"
+
+      portMappings = [
+        {
+          containerPort = var.container_port
+          protocol      = "tcp"
+        }
+      ]
+
+      essential = true
+    }
+  ])
+}
+
+
 resource "aws_ecs_service" "rag_app" {
-  name            = var.name
-  cluster         = var.cluster_id
-  desired_count   = var.desired_count
-  launch_type     = "FARGATE"
+  name    = var.name
+  cluster = var.cluster_id
+
+  desired_count = 1
+  launch_type   = "FARGATE"
+
+  task_definition = aws_ecs_task_definition.bootstrap.arn
 
   deployment_controller {
     type = "CODE_DEPLOY"
   }
 
   network_configuration {
-    subnets         = var.subnet_ids
-    security_groups = [var.security_group_id]
+    subnets          = var.subnet_ids
+    security_groups  = [var.security_group_id]
     assign_public_ip = true
   }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.blue.arn
-    container_name   = var.container_name
-    container_port   = var.container_port
+    container_name   = "my-container"
+    container_port   = 8000
   }
 
   lifecycle {
@@ -93,4 +125,3 @@ resource "aws_ecs_service" "rag_app" {
     ]
   }
 }
-

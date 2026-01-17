@@ -1,9 +1,9 @@
-version: 0.0
+version: 1
 Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: "<TASK_DEFINITION>"
+        TaskDefinition: <TASK_DEFINITION>
         LoadBalancerInfo:
-          ContainerName: "my-container"  # ECS container definition name
+          ContainerName: my-container
           ContainerPort: 8000

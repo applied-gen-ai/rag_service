@@ -57,8 +57,3 @@ variable "environment" {
   type        = string
 }
 
-variable "llm_target" {
-  description = "LLM gRPC endpoint exposed by EKS NLB"
-  type        = string
-}
-

@@ -6,10 +6,6 @@ output "cluster_name" {
   value = module.ecs-cluster.cluster_name
 }
 
-output "task_definition_arn" {
-  value = module.task-definition.task_definition_arn
-}
-
 output "pipeline_name" {
   value = module.CI-CD.pipeline_name
 }
