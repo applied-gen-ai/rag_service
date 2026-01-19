@@ -53,7 +53,7 @@ phases:
       - docker push "$REPOSITORY_URI:$IMAGE_TAG" || (echo "Failed to push tagged image!" && exit 1)
       - docker push "$REPOSITORY_URI:latest" || (echo "Failed to push latest image!" && exit 1)
       - echo "Injecting image URI into taskdef.json..."
-      - sed -i "s|<IMAGE1_NAME>|$REPOSITORY_URI:$IMAGE_TAG|g" taskdef.json
+      - sed -i "s|IMAGE1_NAME|$REPOSITORY_URI:$IMAGE_TAG|g" taskdef.json
       - echo "Final taskdef.json:"
       - cat taskdef.json
       - echo "=== BUILD COMPLETED SUCCESSFULLY ==="
