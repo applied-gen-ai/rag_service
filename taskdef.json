@@ -8,7 +8,7 @@
   "containerDefinitions": [
     {
       "name": "my-container",
-      "image": "<IMAGE1_NAME>",
+      "image": "IMAGE1_NAME",
       "portMappings": [
         { "containerPort": 8000, "protocol": "tcp" }
       ],
