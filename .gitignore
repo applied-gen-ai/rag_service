@@ -28,10 +28,6 @@ config/secrets.yaml
 # TERRAFORM STATE (CONTAINS SECRETS!)
 # ============================================================================
 # Terraform state files contain sensitive information
-terraform.tfvars
-*.tfvars
-!*.tfvars.example
-
 # Terraform state
 *.tfstate
 *.tfstate.*
